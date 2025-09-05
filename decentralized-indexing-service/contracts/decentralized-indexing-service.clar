@@ -55,3 +55,52 @@
     evidence-hash: (string-ascii 64)
   }
 )
+
+;; Query Tracking
+(define-map QueryTracking
+  { 
+    query-id: (string-ascii 64),
+    node: principal 
+  }
+  {
+    timestamp: uint,
+    query-type: uint,
+    data-hash: (string-ascii 64),
+    verified: bool
+  }
+)
+
+;; Governance Parameters
+(define-map NetworkParameters
+  { param-key: (string-ascii 32) }
+  { value: uint }
+)
+
+;; Global State Variables
+(define-data-var total-nodes uint u0)
+(define-data-var total-staked-amount uint u0)
+(define-data-var total-queries-processed uint u0)
+(define-data-var total-data-indexed uint u0)
+
+;; Advanced Data Commitment
+(define-public (submit-data-commitment 
+  (node principal)
+  (data-hash (string-ascii 64))
+)
+  (let (
+    (node-info (unwrap! (map-get? IndexingNodes { node-address: node }) ERR_INVALID_NODE))
+  )
+    ;; Verify node is active
+    (asserts! (get active node-info) ERR_UNAUTHORIZED)
+    
+    ;; Update total indexed data
+    (map-set IndexingNodes 
+      { node-address: node }
+      (merge node-info {
+        total-data-indexed: (+ (get total-data-indexed node-info) u1)
+      })
+    )
+    
+    (ok true)
+)
+)
